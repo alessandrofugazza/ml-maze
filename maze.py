@@ -69,7 +69,10 @@ class Player:
     def exit_found(self):
         return [self.current_position["x"], self.current_position["y"]] == SOLUTION
 
-def basic_algorithm(player=None):
+record = None
+
+def basic_algorithm(player=None, ):
+    global record
     if player is None:
         player = Player()
     while True:
@@ -89,7 +92,17 @@ def basic_algorithm(player=None):
         player.move(chosen_direction)
 
         if player.exit_found():
+
             player.path_followed.append([player.current_position["x"], player.current_position["y"]])
+            if record is None:
+                record = len(player.path_followed)
+            else:
+                if len(player.path_followed) > record:
+                    print("Longer than previous record.")
+                    continue
+                if record > len(player.path_followed):
+                    record = len(player.path_followed)
+                    print(f"New record: {record} steps.")
             print("Exit found!")
             break
 
@@ -108,8 +121,9 @@ def basic_algorithm(player=None):
     return player.path_followed
 
 
-def improve_run(previous_run):
-    first_half = previous_run[:len(previous_run)//2]
+def improve_run(previous_run, depth):
+    first_half = previous_run[:depth]
+    # first_half = previous_run[:len(previous_run)//2]
     player = Player()
     player.path_followed = first_half
     player.current_position = {
@@ -119,7 +133,8 @@ def improve_run(previous_run):
     basic_algorithm(player)
 
 previous_run = basic_algorithm()
-improve_run(previous_run)
+for i in range(2, len(previous_run)):
+    improve_run(previous_run, i)
 
 
 def run_tests():
