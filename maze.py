@@ -1,13 +1,21 @@
 import random
 
-TEST_RUNS_AMOUNT = 20
+TEST_RUNS_AMOUNT = 3
 
 
 with open("maze.txt") as f:
     maze = [list(line[:-1]) for line in f]
 
-SOLUTION = [len(maze) -1, len(maze) -1]
-MAZE_DIMENSION = len(maze)
+
+solution = None
+
+for i in range(len(maze)):
+    for j in range(len(maze[i])):
+        if maze[i][j] == "x":
+            solution = [i, j]
+            break
+            
+MAZE_DIMENSIONS = (len(maze), len(maze[0]))
 
 class Player:
     def __init__(self, starting_x=0, starting_y=0):
@@ -30,7 +38,7 @@ class Player:
         def is_not_wall(x, y):
             return maze[x][y] != "#"
         def is_within_bounds(x, y):
-            return 0 <= x < MAZE_DIMENSION and 0 <= y < MAZE_DIMENSION
+            return 0 <= x < MAZE_DIMENSIONS[0] and 0 <= y < MAZE_DIMENSIONS[1]
         def was_visited(x, y):
             return [x, y] in self.path_followed
         def was_previous_position(x, y):
@@ -67,7 +75,7 @@ class Player:
         self.available_moves["right"] = self.move_is_possible("right")
             
     def exit_found(self):
-        return [self.current_position["x"], self.current_position["y"]] == SOLUTION
+        return [self.current_position["x"], self.current_position["y"]] == solution
 
 record = None
 
@@ -90,6 +98,14 @@ def basic_algorithm(player=None, ):
 
         chosen_direction = random.choice(possible_directions)
         player.move(chosen_direction)
+        # for i in range(MAZE_DIMENSION):
+        #     for j in range(MAZE_DIMENSION):
+        #         if [i, j] in player.path_followed:
+        #             print("·", end="")
+        #         else:
+        #             print(maze[i][j], end="")
+                    
+        #     print()
 
         if player.exit_found():
 
@@ -106,9 +122,9 @@ def basic_algorithm(player=None, ):
             print("Exit found!")
             break
 
-    for i in range(MAZE_DIMENSION):
-        for j in range(MAZE_DIMENSION):
-            if [i, j] in player.path_followed:
+    for i in range(MAZE_DIMENSIONS[0]):
+        for j in range(MAZE_DIMENSIONS[1]):
+            if [i, j] in player.path_followed[:-1]:
                 print("·", end="")
             else:
                 print(maze[i][j], end="")
@@ -132,9 +148,7 @@ def improve_run(previous_run, depth):
     }
     basic_algorithm(player)
 
-previous_run = basic_algorithm()
-for i in range(2, len(previous_run)):
-    improve_run(previous_run, i)
+
 
 
 def run_tests():
@@ -164,7 +178,14 @@ def run_tests():
                 print(f"Test run {test_run + 1} completed. {len(player.path_followed)} steps. {player.attempts_needed} attempts needed.")
                 break
 
+    shortest_run = min(test_runs, key=len)
+    print(f"Shortest run found with {len(shortest_run)} steps.")
+    return shortest_run
 
 
-# for test_run in test_runs:
-#     print(test_run)
+
+# previous_run = basic_algorithm()
+shortest_run_from_tests = run_tests()
+for i in range(2, len(shortest_run_from_tests)):
+    print(f"Iteration {i}/{len(shortest_run_from_tests)}")
+    improve_run(shortest_run_from_tests, i)
