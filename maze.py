@@ -1,6 +1,6 @@
 import random
 
-
+TEST_RUNS_AMOUNT = 20
 
 
 with open("maze.txt") as f:
@@ -67,38 +67,67 @@ class Player:
     def exit_found(self):
         return [self.current_position["x"], self.current_position["y"]] == SOLUTION
 
-player = Player()
-while True:
-    player.check_available_moves()
-    possible_directions = [direction for direction, is_possible in player.available_moves.items() if is_possible]
-    
-    if not possible_directions:
-        print("No more moves available. Exiting.")
-        player.path_followed = []
-        player.current_position = {
-            "x": 0,
-            "y": 0
-        }
-        player.attempts_needed += 1
-        continue
+def basic_algorithm():
+    player = Player()
+    while True:
+        player.check_available_moves()
+        possible_directions = [direction for direction, is_possible in player.available_moves.items() if is_possible]
+        
+        if not possible_directions:
+            player.path_followed = []
+            player.current_position = {
+                "x": 0,
+                "y": 0
+            }
+            player.attempts_needed += 1
+            continue
 
-    chosen_direction = random.choice(possible_directions)
-    player.move(chosen_direction)
+        chosen_direction = random.choice(possible_directions)
+        player.move(chosen_direction)
 
-    if player.exit_found():
-        player.path_followed.append([player.current_position["x"], player.current_position["y"]])
-        print("Exit found!")
-        break
+        if player.exit_found():
+            player.path_followed.append([player.current_position["x"], player.current_position["y"]])
+            print("Exit found!")
+            break
 
-# Draw the maze with the path followed marked by '+'
-for i in range(MAZE_DIMENSION):
-    for j in range(MAZE_DIMENSION):
-        if [i, j] in player.path_followed:
-            print("·", end="")
-        else:
-            print(maze[i][j], end="")
-            
+    for i in range(MAZE_DIMENSION):
+        for j in range(MAZE_DIMENSION):
+            if [i, j] in player.path_followed:
+                print("·", end="")
+            else:
+                print(maze[i][j], end="")
+                
+        print()
+
     print()
+    print(f"Attempts needed: {player.attempts_needed:>5}")
 
-print()
-print(f"Attempts needed: {player.attempts_needed:>5}")
+
+test_runs = []
+
+for test_run in range(TEST_RUNS_AMOUNT):
+    player = Player()
+    while True:
+        player.check_available_moves()
+        possible_directions = [direction for direction, is_possible in player.available_moves.items() if is_possible]
+        
+        if not possible_directions:
+            player.path_followed = []
+            player.current_position = {
+                "x": 0,
+                "y": 0
+            }
+            player.attempts_needed += 1
+            continue
+
+        chosen_direction = random.choice(possible_directions)
+        player.move(chosen_direction)
+
+        if player.exit_found():
+            player.path_followed.append([player.current_position["x"], player.current_position["y"]])
+            test_runs.append(player.path_followed)
+            print(f"Test run {test_run + 1} completed. {player.attempts_needed} attempts needed.")
+            break
+
+for test_run in test_runs:
+    print(test_run)
