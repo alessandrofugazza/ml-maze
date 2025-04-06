@@ -1,6 +1,7 @@
 import random
 
-TEST_RUNS_AMOUNT = 3
+TEST_RUNS_AMOUNT = 2
+DIRECTION_BIAS = 0.4
 
 
 with open("maze.txt") as f:
@@ -16,7 +17,7 @@ for i in range(len(maze)):
             break
             
 MAZE_DIMENSIONS = (len(maze), len(maze[0]))
-
+solution_coordinates = None
 class Player:
     def __init__(self, starting_x=0, starting_y=0):
         self.current_position = {
@@ -31,6 +32,7 @@ class Player:
             "right": True
         }
         self.attempts_needed = 1
+        
 
 
     def move_is_possible(self, direction):
@@ -45,7 +47,12 @@ class Player:
             return [x, y] == self.path_followed[-1] if self.path_followed else False
         
         def destination_is_valid(x, y):
-            return not was_previous_position(x, y) and is_within_bounds(x, y) and is_not_wall(x, y) and not was_visited(x, y)
+            if solution_coordinates is None:
+                return is_within_bounds(x, y) and is_not_wall(x, y)
+            else:
+                # return not was_previous_position(x, y) and is_within_bounds(x, y) and is_not_wall(x, y)
+                return not was_previous_position(x, y) and is_within_bounds(x, y) and is_not_wall(x, y) and not was_visited(x, y)
+            # return not was_previous_position(x, y) and is_within_bounds(x, y) and is_not_wall(x, y)
         
         if direction == "up":
             return destination_is_valid(self.current_position["x"], self.current_position["y"] - 1)
@@ -57,16 +64,16 @@ class Player:
             return destination_is_valid(self.current_position["x"] + 1, self.current_position["y"])
 
     def move(self, direction):
-        if self.move_is_possible(direction):
-            self.path_followed.append([self.current_position["x"], self.current_position["y"]])
-            if direction == "up":
-                self.current_position["y"] -= 1
-            elif direction == "down":
-                self.current_position["y"] += 1
-            elif direction == "left":
-                self.current_position["x"] -= 1
-            elif direction == "right":
-                self.current_position["x"] += 1
+        # if self.move_is_possible(direction):
+        self.path_followed.append([self.current_position["x"], self.current_position["y"]])
+        if direction == "up":
+            self.current_position["y"] -= 1
+        elif direction == "down":
+            self.current_position["y"] += 1
+        elif direction == "left":
+            self.current_position["x"] -= 1
+        elif direction == "right":
+            self.current_position["x"] += 1
 
     def check_available_moves(self):
         self.available_moves["up"] = self.move_is_possible("up")
@@ -95,8 +102,17 @@ def basic_algorithm(player=None, ):
             }
             player.attempts_needed += 1
             continue
-
-        chosen_direction = random.choice(possible_directions)
+        
+        if solution_coordinates is None or random.random() > DIRECTION_BIAS:
+            chosen_direction = random.choice(possible_directions)
+        else:
+            chosen_direction = min(
+                possible_directions,
+                key=lambda direction: (
+                    abs(player.current_position["x"] + (1 if direction == "right" else -1 if direction == "left" else 0) - solution_coordinates[0]) +
+                    abs(player.current_position["y"] + (1 if direction == "down" else -1 if direction == "up" else 0) - solution_coordinates[1])
+                )
+            )
         player.move(chosen_direction)
         # for i in range(MAZE_DIMENSION):
         #     for j in range(MAZE_DIMENSION):
@@ -114,7 +130,7 @@ def basic_algorithm(player=None, ):
                 record = len(player.path_followed)
             else:
                 if len(player.path_followed) > record:
-                    print("Longer than previous record.")
+                    # print("Longer than previous record.")
                     continue
                 if record > len(player.path_followed):
                     record = len(player.path_followed)
@@ -152,6 +168,7 @@ def improve_run(previous_run, depth):
 
 
 def run_tests():
+    global solution_coordinates
     test_runs = []
 
     for test_run in range(TEST_RUNS_AMOUNT):
@@ -173,6 +190,8 @@ def run_tests():
             player.move(chosen_direction)
 
             if player.exit_found():
+                if solution_coordinates is None:
+                    solution_coordinates = [player.current_position["x"], player.current_position["y"]]
                 player.path_followed.append([player.current_position["x"], player.current_position["y"]])
                 test_runs.append(player.path_followed)
                 print(f"Test run {test_run + 1} completed. {len(player.path_followed)} steps. {player.attempts_needed} attempts needed.")
