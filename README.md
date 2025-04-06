@@ -1,6 +1,6 @@
 # ml-maze
 
-This algorithm runs multiple runs over and over and learns from previous runs in order to find the shortest path to the exit.
+This algorithm executes multiple runs over and over and learns from previous runs in order to find the shortest path to the exit.
  
 Use https://www.dcode.fr/maze-generator to generate the maze. 
 
