@@ -10,10 +10,10 @@ SOLUTION = [len(maze) -1, len(maze) -1]
 MAZE_DIMENSION = len(maze)
 
 class Player:
-    def __init__(self):
+    def __init__(self, starting_x=0, starting_y=0):
         self.current_position = {
-            "x": 0,
-            "y": 0
+            "x": starting_x,
+            "y": starting_y
         }
         self.path_followed = []
         self.available_moves = {
@@ -33,9 +33,11 @@ class Player:
             return 0 <= x < MAZE_DIMENSION and 0 <= y < MAZE_DIMENSION
         def was_visited(x, y):
             return [x, y] in self.path_followed
+        def was_previous_position(x, y):
+            return [x, y] == self.path_followed[-1] if self.path_followed else False
         
         def destination_is_valid(x, y):
-            return is_within_bounds(x, y) and is_not_wall(x, y) and not was_visited(x, y)
+            return not was_previous_position(x, y) and is_within_bounds(x, y) and is_not_wall(x, y) and not was_visited(x, y)
         
         if direction == "up":
             return destination_is_valid(self.current_position["x"], self.current_position["y"] - 1)
@@ -67,8 +69,9 @@ class Player:
     def exit_found(self):
         return [self.current_position["x"], self.current_position["y"]] == SOLUTION
 
-def basic_algorithm():
-    player = Player()
+def basic_algorithm(player=None):
+    if player is None:
+        player = Player()
     while True:
         player.check_available_moves()
         possible_directions = [direction for direction, is_possible in player.available_moves.items() if is_possible]
@@ -100,34 +103,53 @@ def basic_algorithm():
         print()
 
     print()
+    print(f"Steps: {len(player.path_followed)}")
     print(f"Attempts needed: {player.attempts_needed:>5}")
+    return player.path_followed
 
 
-test_runs = []
-
-for test_run in range(TEST_RUNS_AMOUNT):
+def improve_run(previous_run):
+    first_half = previous_run[:len(previous_run)//2]
     player = Player()
-    while True:
-        player.check_available_moves()
-        possible_directions = [direction for direction, is_possible in player.available_moves.items() if is_possible]
-        
-        if not possible_directions:
-            player.path_followed = []
-            player.current_position = {
-                "x": 0,
-                "y": 0
-            }
-            player.attempts_needed += 1
-            continue
+    player.path_followed = first_half
+    player.current_position = {
+        "x": first_half[-1][0],
+        "y": first_half[-1][1]
+    }
+    basic_algorithm(player)
 
-        chosen_direction = random.choice(possible_directions)
-        player.move(chosen_direction)
+previous_run = basic_algorithm()
+improve_run(previous_run)
 
-        if player.exit_found():
-            player.path_followed.append([player.current_position["x"], player.current_position["y"]])
-            test_runs.append(player.path_followed)
-            print(f"Test run {test_run + 1} completed. {player.attempts_needed} attempts needed.")
-            break
 
-for test_run in test_runs:
-    print(test_run)
+def run_tests():
+    test_runs = []
+
+    for test_run in range(TEST_RUNS_AMOUNT):
+        player = Player()
+        while True:
+            player.check_available_moves()
+            possible_directions = [direction for direction, is_possible in player.available_moves.items() if is_possible]
+            
+            if not possible_directions:
+                player.path_followed = []
+                player.current_position = {
+                    "x": 0,
+                    "y": 0
+                }
+                player.attempts_needed += 1
+                continue
+
+            chosen_direction = random.choice(possible_directions)
+            player.move(chosen_direction)
+
+            if player.exit_found():
+                player.path_followed.append([player.current_position["x"], player.current_position["y"]])
+                test_runs.append(player.path_followed)
+                print(f"Test run {test_run + 1} completed. {len(player.path_followed)} steps. {player.attempts_needed} attempts needed.")
+                break
+
+
+
+# for test_run in test_runs:
+#     print(test_run)
